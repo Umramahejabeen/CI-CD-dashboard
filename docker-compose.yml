@@ -2,7 +2,9 @@ version: "3.8"
 
 services:
   backend:
-    image: umramahejabeen/cicd-dashboard-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: cicd-backend
     restart: unless-stopped
     ports:
@@ -18,7 +20,9 @@ services:
       - cicd-net
 
   frontend:
-    image: umramahejabeen/cicd-dashboard-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: cicd-frontend
     restart: unless-stopped
     ports:
