@@ -2,12 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_CREDENTIALS = 'dockerhub-creds'
-        DOCKER_USERNAME = 'umramahejabeen'
-        BACKEND_IMAGE         = "${DOCKER_USERNAME}/cicd-dashboard-backend"
-        FRONTEND_IMAGE        = "${DOCKER_USERNAME}/cicd-dashboard-frontend"
-        EC2_HOST              = '13.204.80.94'
-        EC2_USER              = 'ubuntu'
+        EC2_HOST = '13.204.80.94'
+        EC2_USER = 'ubuntu'
+        REMOTE_DIR = '~/cicd-dashboard'
     }
 
     stages {
@@ -28,29 +25,12 @@ pipeline {
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Deploy & Build on EC2') {
             steps {
-                bat "docker build -t %BACKEND_IMAGE%:%BUILD_NUMBER% -t %BACKEND_IMAGE%:latest ./backend"
-                bat "docker build -t %FRONTEND_IMAGE%:%BUILD_NUMBER% -t %FRONTEND_IMAGE%:latest ./frontend"
-            }
-        }
-
-        stage('Push to Docker Hub') {
-            steps {
-                bat "echo %DOCKER_CREDENTIALS_PSW% | docker login -u %DOCKER_CREDENTIALS_USR% --password-stdin"
-                bat "docker push %BACKEND_IMAGE%:%BUILD_NUMBER%"
-                bat "docker push %BACKEND_IMAGE%:latest"
-                bat "docker push %FRONTEND_IMAGE%:%BUILD_NUMBER%"
-                bat "docker push %FRONTEND_IMAGE%:latest"
-            }
-        }
-
-        stage('Deploy to EC2') {
-            steps {
-                sshagent(credentials: ['ec2-ssh-key']) {   // Jenkins credential ID for EC2 SSH key
+                sshagent(credentials: ['ec2-ssh-key']) {
                     bat """
                     ssh -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% ^
-                    "cd ~/cicd-dashboard && docker compose pull && docker compose up -d --remove-orphans"
+                    "cd %REMOTE_DIR% && git pull origin main && docker compose down && docker compose build --no-cache && docker compose up -d --remove-orphans"
                     """
                 }
             }
@@ -59,13 +39,10 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline completed successfully. Dashboard redeployed.'
+            echo 'Pipeline completed successfully. Dashboard rebuilt and redeployed on EC2.'
         }
         failure {
             echo 'Pipeline failed. Check console output above.'
-        }
-        always {
-            bat 'docker logout'
         }
     }
 }
