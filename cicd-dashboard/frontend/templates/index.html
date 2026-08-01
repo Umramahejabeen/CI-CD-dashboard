@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CI/CD Status Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>🚀 CI/CD Status Dashboard</h1>
+        <p>Live status of Jenkins pipelines</p>
+    </header>
+
+    <section class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Builds</h3>
+            <p>{{ stats.total_builds or 0 }}</p>
+        </div>
+        <div class="stat-card success">
+            <h3>Success</h3>
+            <p>{{ stats.success_count or 0 }}</p>
+        </div>
+        <div class="stat-card failure">
+            <h3>Failure</h3>
+            <p>{{ stats.failure_count or 0 }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Success Rate</h3>
+            <p>{{ stats.success_rate or 0 }}%</p>
+        </div>
+        <div class="stat-card">
+            <h3>Avg Duration</h3>
+            <p>{{ (stats.avg_duration_ms or 0) | round(0) }} ms</p>
+        </div>
+    </section>
+
+    <section class="jobs-section">
+        <h2>Jobs</h2>
+        <table class="jobs-table">
+            <thead>
+                <tr>
+                    <th>Job Name</th>
+                    <th>Latest Build #</th>
+                    <th>Status</th>
+                    <th>Duration (ms)</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                <tr class="row-{{ job.status | lower }}">
+                    <td>{{ job.job_name }}</td>
+                    <td>{{ job.build_number }}</td>
+                    <td><span class="badge {{ job.status | lower }}">{{ job.status }}</span></td>
+                    <td>{{ job.duration_ms }}</td>
+                    <td><a href="/job/{{ job.job_name }}">View history →</a></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5">No jobs synced yet. Trigger a build in Jenkins or hit /api/sync.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <canvas id="successChart" width="400" height="150"></canvas>
+
+    <script>
+        const ctx = document.getElementById('successChart');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Success', 'Failure'],
+                datasets: [{
+                    data: [{{ stats.success_count or 0 }}, {{ stats.failure_count or 0 }}],
+                    backgroundColor: ['#22c55e', '#ef4444']
+                }]
+            }
+        });
+    </script>
+</body>
+</html>

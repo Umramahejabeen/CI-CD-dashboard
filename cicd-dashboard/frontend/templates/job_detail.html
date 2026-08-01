@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ job_name }} - Build History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>{{ job_name }}</h1>
+        <p><a href="/">&larr; Back to dashboard</a></p>
+    </header>
+
+    <section class="jobs-section">
+        <table class="jobs-table">
+            <thead>
+                <tr>
+                    <th>Build #</th>
+                    <th>Status</th>
+                    <th>Duration (ms)</th>
+                    <th>Timestamp</th>
+                    <th>Jenkins Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for build in builds %}
+                <tr class="row-{{ build.status | lower }}">
+                    <td>{{ build.build_number }}</td>
+                    <td><span class="badge {{ build.status | lower }}">{{ build.status }}</span></td>
+                    <td>{{ build.duration_ms }}</td>
+                    <td>{{ build.timestamp }}</td>
+                    <td><a href="{{ build.url }}" target="_blank">Open in Jenkins</a></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5">No build history found for this job.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</body>
+</html>
