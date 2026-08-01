@@ -27,9 +27,9 @@ pipeline {
 
         stage('Deploy & Build on EC2') {
             steps {
-                sshagent(credentials: ['ec2-ssh-key']) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'cicd-ec2-ssh-key', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                     bat """
-                    ssh -o StrictHostKeyChecking=no %EC2_USER%@%EC2_HOST% ^
+                    ssh -o StrictHostKeyChecking=no -i "%SSH_KEY%" %EC2_USER%@%EC2_HOST% ^
                     "cd %REMOTE_DIR% && git pull origin main && docker compose down && docker compose build --no-cache && docker compose up -d --remove-orphans"
                     """
                 }
